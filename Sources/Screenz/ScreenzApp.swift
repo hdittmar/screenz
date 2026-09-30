@@ -53,6 +53,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         statusItem.button?.setAccessibilityLabel("Screenz")
         optionsMenu.autoenablesItems = false
         optionsMenu.delegate = self
+        menuNeedsUpdate(optionsMenu)
         statusItem.menu = optionsMenu
     }
 
@@ -61,6 +62,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         model.reloadArrangements()
         menu.removeAllItems()
         let busy = model.phase == .confirming || model.phase == .processing
+        @discardableResult
         func add(_ title: String, _ action: Selector, enabled: Bool = true) -> NSMenuItem {
             let item = NSMenuItem(title: title, action: action, keyEquivalent: "")
             item.target = self; item.isEnabled = enabled; menu.addItem(item)
