@@ -1,0 +1,40 @@
+name: Package release draft
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: macos-15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check tag matches app version
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          VERSION=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' Packaging/Info.plist)
+          test "$GITHUB_REF_NAME" = "v$VERSION"
+      - name: Test
+        run: zsh scripts/test.sh
+      - name: Package universal development build
+        run: zsh scripts/package.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Screenz-universal-development
+          path: |
+            dist/*.dmg
+            dist/*.zip
+            dist/*.sha256
+          if-no-files-found: error
+      - name: Create or update draft release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release create "$GITHUB_REF_NAME" --draft --title "Screenz $GITHUB_REF_NAME" --notes-file Packaging/Release-notes.md
+          fi
+          gh release upload "$GITHUB_REF_NAME" dist/*.dmg dist/*.zip dist/*.sha256 --clobber

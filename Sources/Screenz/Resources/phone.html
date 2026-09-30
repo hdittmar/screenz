@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Screenz</title>
+<style>
+:root{font-family:-apple-system,BlinkMacSystemFont,sans-serif;color:#202124;background:#fafafa;color-scheme:light dark;--panel:#fff;--line:#e6e6e8;--muted:#717177;--button:#1674ea}*{box-sizing:border-box}body{margin:0 auto;padding:28px 24px max(28px,env(safe-area-inset-bottom));max-width:480px}header{font-size:15px;font-weight:600;margin-bottom:40px}h1{font-size:30px;letter-spacing:-.8px;font-weight:650;line-height:1.15;margin:0 0 14px}p{font-size:15px;line-height:1.55;color:var(--muted)}section{padding:22px 0;border-bottom:1px solid var(--line)}h2{font-size:16px;margin:0;font-weight:600}button,.capture{display:block;width:100%;border:0;border-radius:10px;background:var(--button);color:#fff;padding:15px;font:600 15px -apple-system,BlinkMacSystemFont,sans-serif;text-align:center;cursor:pointer;margin-top:16px}.secondary{display:block;text-align:center;font-size:13px;color:var(--muted);margin-top:18px;cursor:pointer}button:disabled{opacity:.45;cursor:wait}button:focus-visible,label:focus-within{outline:3px solid #75aaff;outline-offset:3px}input{position:absolute;opacity:0;width:1px;height:1px}#preview{width:100%;max-height:260px;object-fit:contain;border-radius:10px;margin-top:20px}#status{padding:20px 0;font-size:14px;line-height:1.5}#status.error{color:#d34235}[hidden]{display:none!important}@media(prefers-color-scheme:dark){:root{color:#f0f0f2;background:#1e1e20;--panel:#29292b;--line:#363639;--muted:#a1a1a8;--button:#287fe8}}
+</style>
+<header>Screenz</header>
+<main>
+<h1>Photograph your displays</h1>
+<p>Show the markers, then take one photo with every screen in view.</p>
+<section>
+<button id="markers">Show screen markers</button>
+</section>
+<section id="captureSection" hidden>
+<h2>Include every marker</h2>
+<p>Keep your phone level and avoid glare.</p>
+<label class="capture">Take a photo<input id="camera" type="file" accept="image/*" capture="environment"></label>
+<label class="secondary">Choose existing photo<input id="library" type="file" accept="image/*"></label>
+<img id="preview" alt="Your desk photo" hidden>
+<button id="send" hidden>Send to Mac</button>
+</section>
+<div id="status" role="status" aria-live="polite"></div>
+</main>
+<script>
+const base=location.pathname.replace(/\/$/,''),$=id=>document.getElementById(id);
+let photo=null,previewURL=null,busy=false,pollTimer=null;
+function status(message,error=false){$('status').textContent=message;$('status').className=error?'error':'';}
+async function call(path,options={}){
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),45000);
+ try{const res=await fetch(base+path,{...options,signal:controller.signal});const value=await res.json();if(!res.ok)throw new Error(value.error||'Please try again.');return value;}
+ catch(e){if(e.name==='AbortError')throw new Error('The connection timed out. Check that your Mac and iPhone are on the same Wi-Fi.');throw e;}
+ finally{clearTimeout(timer);}
+}
+$('markers').onclick=async()=>{
+ $('markers').disabled=true;
+ try{await call('/markers',{method:'POST'});$('captureSection').hidden=false;status('Markers are ready. Include all of them in your photo.');$('captureSection').scrollIntoView({behavior:'smooth'});}
+ catch(e){status(e.message,true);}finally{$('markers').disabled=false;}
+};
+async function select(file){
+ if(!file)return;
+ if(file.size>24*1024*1024){status('Choose a photo smaller than 24 MB.',true);return;}
+ photo=file;if(previewURL)URL.revokeObjectURL(previewURL);previewURL=URL.createObjectURL(file);
+ $('preview').src=previewURL;$('preview').hidden=false;$('send').hidden=false;status('Check that every marker is visible, then send your photo.');
+}
+for(const id of ['camera','library'])$(id).onchange=e=>select(e.target.files[0]);
+async function poll(){
+ try{const data=await call('/status');
+  if(data.error){status(data.error,true);return;}
+  if(data.phase==='review'||data.phase==='done'||data.phase==='confirming'){status('All screens found. Go back to your Mac to check and apply the arrangement.');return;}
+  if(data.phase!=='processing'){status(data.message);return;}
+  pollTimer=setTimeout(poll,1200);
+ }catch(e){status('Cannot reach your Mac. Reconnect to the same Wi-Fi or scan a new code.',true);}
+}
+$('send').onclick=async()=>{
+ if(!photo||busy)return;busy=true;$('send').disabled=true;$('markers').disabled=true;clearTimeout(pollTimer);
+ status('Sending your photo…');
+ try{await call('/upload',{method:'POST',headers:{'Content-Type':photo.type||'image/jpeg'},body:photo});status('Photo received. Finding your screens…');pollTimer=setTimeout(poll,800);}
+ catch(e){status(e.message,true);}finally{busy=false;$('send').disabled=false;$('markers').disabled=false;}
+};
+</script>
+</html>
