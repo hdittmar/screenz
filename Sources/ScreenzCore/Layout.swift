@@ -59,7 +59,7 @@ public enum Layout {
             for i in placed.sorted() {
                 for j in displays.indices where !placed.contains(j) {
                     let a = observations[displays[i].id]!, b = observations[displays[j].id]!
-                    let distance = hypot(b.center.x - a.center.x, b.center.y - a.center.y)
+                    let distance = Double(hypot(b.center.x - a.center.x, b.center.y - a.center.y))
                     if best == nil || distance < best!.2 { best = (i, j, distance) }
                 }
             }
