@@ -45,7 +45,7 @@ For a public notarized release, build with the signing environment above, upload
 1. Run the automated tests and inspect `.build/previews/`.
 2. Build packages, verify checksums, and mount the DMG to check its contents.
 3. Install a copy outside the build directory and confirm menu bar startup and phone pairing.
-4. Exercise a real iPhone photo, multi-display apply, Keep, timeout revert, and Quit.
+4. Exercise a real phone photo, multi-display apply, Keep, timeout revert, and Quit.
 5. Check Launch at Login on the installed build if enabling it.
 
 Synthetic tests do not replace the physical-device checks. A universal binary contains both architectures; Intel execution is separately exercised by CI.

@@ -2,7 +2,7 @@
 
 **One photo. Everything in place.**
 
-Screenz is a native macOS menu bar app that turns an iPhone photo of your desk into a display arrangement. Scan a QR code, photograph the markers on your screens, and review the result before applying it.
+Screenz is a native macOS menu bar app that turns a phone photo of your desk into a display arrangement. Scan a QR code, photograph the markers on your screens, and review the result before applying it.
 
 ![Screenz arrangement preview](docs/arrangement.png)
 
@@ -11,15 +11,15 @@ Screenz is a native macOS menu bar app that turns an iPhone photo of your desk i
 Download the universal **DMG** from [Releases](https://github.com/hdittmar/screenz/releases), open it, and drag **Screenz** to **Applications**. Open the app and look for the **two-display icon in your menu bar**.
 
 - macOS 13 or later; Apple Silicon and Intel.
-- No iPhone app, account, or cloud service.
-- Mac and iPhone on the same local network.
+- No phone app, account, or cloud service.
+- Mac and phone on the same local network.
 
 **Current development builds are ad-hoc signed, not Apple-notarized.** macOS may require allowing a trusted build in **System Settings → Privacy & Security** after the first launch attempt. See [release packaging](docs/RELEASING.md) for Developer ID signing and notarization.
 
 ## Use
 
-1. Click the menu bar icon and choose **Connect iPhone**.
-2. Scan the QR code with your iPhone Camera and open the link in Safari.
+1. Click the menu bar icon and choose **Connect phone**.
+2. Scan the QR code with your phone’s camera and open the link in your browser.
 3. Tap **Show screen markers**, then photograph all your displays in one image.
 4. Tap **Send to my Mac**. Review the detected layout and drag screens to correct offsets.
 5. Click **Apply arrangement**, then **Keep arrangement** within 20 seconds. Otherwise, Screenz restores the previous positions.
@@ -46,7 +46,7 @@ zsh scripts/test.sh       # Layout, HTTP, Vision, upload, native UI rendering
 zsh scripts/package.sh   # Universal app, DMG, ZIP, SHA-256 checksums
 ```
 
-Tests never change your display settings. Rendered UI previews are in `.build/previews/`. GitHub Actions tests both Apple Silicon and Intel and builds downloadable development artifacts. Tagged versions produce a draft GitHub release.
+Tests never change your display settings. Rendered UI previews are in `.build/previews/`. GitHub Actions tests the app logic, Vision, and uploads on both Apple Silicon and Intel; native screenshot rendering runs on Apple Silicon because Intel hosted VMs lack a working Metal renderer. The workflow builds downloadable development artifacts. Tagged versions produce a draft GitHub release.
 
 ## Privacy and limitations
 

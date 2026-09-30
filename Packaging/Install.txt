@@ -3,10 +3,10 @@ Screenz — Arrange your displays with a photo
 1. Drag Screenz.app to Applications.
 2. Open Screenz from Applications.
 3. Look for the two-display icon in the menu bar.
-4. Click the menu bar icon, choose Connect iPhone, and scan the QR code.
+4. Click the menu bar icon, choose Connect phone, and scan the QR code.
 
 Requires macOS 13 or later. Supports Apple Silicon and Intel Macs.
-Your iPhone and Mac must be on the same local network.
+Your phone and Mac must be on the same local network.
 
 Release notes indicate whether a build is notarized. For a non-notarized
 development build you trust, macOS may require allowing it in System

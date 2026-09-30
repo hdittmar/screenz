@@ -15,6 +15,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Test native app, Vision, and local upload
+        env:
+          # Intel hosted VMs crash inside SwiftUI's Metal renderer. All functional tests still run.
+          SCREENZ_SKIP_PREVIEWS: ${{ matrix.runner == 'macos-15-intel' && '1' || '0' }}
         run: zsh scripts/test.sh
   package:
     needs: test

@@ -131,7 +131,7 @@ struct MainView: View {
     private var title: String {
         switch model.phase {
         case .idle: return "Arrange your displays"
-        case .pairing, .markers: return "Connect your iPhone"
+        case .pairing, .markers: return "Connect your phone"
         case .processing: return "Reading your photo"
         case .review: return "Check your arrangement"
         case .confirming: return "Keep this arrangement?"
@@ -141,7 +141,7 @@ struct MainView: View {
     private var subtitle: String {
         switch model.phase {
         case .idle: return "Take a photo of your screens to match your desk."
-        case .pairing, .markers: return "Scan the code with your iPhone camera. Use the same Wi-Fi."
+        case .pairing, .markers: return "Scan the code with your phone camera. Use the same Wi-Fi."
         case .processing: return "Finding the markers on your displays…"
         case .review: return "Drag to adjust. Your main display stays fixed."
         case .confirming: return "Reverting in \(model.remaining) seconds unless you keep it."
@@ -184,7 +184,7 @@ struct MainView: View {
             HStack {
                 Text("\(model.displays.count) displays connected").font(.system(size: 12)).foregroundStyle(.secondary)
                 Spacer()
-                Button("Connect iPhone", action: model.start).buttonStyle(.borderedProminent).controlSize(.large)
+                Button("Connect phone", action: model.start).buttonStyle(.borderedProminent).controlSize(.large)
             }
         }
     }
@@ -200,7 +200,7 @@ struct MainView: View {
                     } else { ProgressView().frame(width: 216, height: 216) }
                     VStack(alignment: .leading, spacing: 16) {
                         if model.connected {
-                            Label("iPhone connected", systemImage: "checkmark.circle.fill")
+                            Label("Phone connected", systemImage: "checkmark.circle.fill")
                                 .font(.system(size: 13, weight: .medium)).foregroundStyle(.green)
                         }
                         Text("Open the link, show the screen markers, then take one photo of all your displays.")
@@ -254,7 +254,7 @@ struct MainView: View {
                     Spacer()
                     Text(model.isDemo ? "Demo" : "Auto-reverts after 20 seconds")
                         .font(.system(size: 11)).foregroundStyle(.secondary)
-                    Button(model.isDemo ? "Connect iPhone" : "Apply arrangement", action: model.isDemo ? model.start : model.apply)
+                    Button(model.isDemo ? "Connect phone" : "Apply arrangement", action: model.isDemo ? model.start : model.apply)
                         .buttonStyle(.borderedProminent).controlSize(.large)
                         .disabled(!model.isDemo && model.validationError != nil)
                 }

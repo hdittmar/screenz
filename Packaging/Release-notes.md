@@ -1,6 +1,6 @@
-Screenz is a native macOS menu bar app that arranges your displays from an iPhone photo.
+Screenz is a native macOS menu bar app that arranges your displays from a phone photo.
 
-- Pair over a QR code on the same local network; no iPhone app or account.
+- Pair over a QR code on the same local network; no phone app or account.
 - Detect display markers locally with Apple Vision.
 - Preview and adjust before applying, with a 20-second automatic revert.
 - Optional Launch at Login.

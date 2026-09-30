@@ -70,7 +70,7 @@ enum PhotoDetector {
               width.doubleValue * height.doubleValue <= 100_000_000 else {
             throw AppError.message("This photo could not be read. Send a JPEG, PNG, or HEIC photo under 24 MB.")
         }
-        // ImageIO normalizes EXIF rotation before Vision, including portrait iPhone photos.
+        // ImageIO normalizes EXIF rotation before Vision, including portrait phone photos.
         let options: [CFString: Any] = [kCGImageSourceCreateThumbnailFromImageAlways: true,
                                       kCGImageSourceCreateThumbnailWithTransform: true,
                                       kCGImageSourceThumbnailMaxPixelSize: 4096]

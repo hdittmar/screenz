@@ -31,7 +31,7 @@ function status(message,error=false){$('status').textContent=message;$('status')
 async function call(path,options={}){
  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),45000);
  try{const res=await fetch(base+path,{...options,signal:controller.signal});const value=await res.json();if(!res.ok)throw new Error(value.error||'Please try again.');return value;}
- catch(e){if(e.name==='AbortError')throw new Error('The connection timed out. Check that your Mac and iPhone are on the same Wi-Fi.');throw e;}
+ catch(e){if(e.name==='AbortError')throw new Error('The connection timed out. Check that your Mac and phone are on the same Wi-Fi.');throw e;}
  finally{clearTimeout(timer);}
 }
 $('markers').onclick=async()=>{

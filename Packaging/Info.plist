@@ -14,5 +14,5 @@
     <key>LSUIElement</key><true/>
     <key>LSMinimumSystemVersion</key><string>13.0</string>
     <key>NSHighResolutionCapable</key><true/>
-    <key>NSLocalNetworkUsageDescription</key><string>Connect to your iPhone on the same network to receive a photo of your display arrangement.</string>
+    <key>NSLocalNetworkUsageDescription</key><string>Connect to your phone on the same network to receive a photo of your display arrangement.</string>
 </dict></plist>

@@ -42,7 +42,7 @@ final class AppModel: ObservableObject {
         guard displays.count > 1 else { error = "Connect at least two displays to scan your desk."; return }
         do { try DisplaySystem.ensureSameDisplays(displays) } catch { self.error = error.localizedDescription; return }
         addresses = LocalServer.addresses()
-        guard let address = addresses.first else { error = "Connect your Mac and iPhone to the same Wi-Fi or local network, then try again."; return }
+        guard let address = addresses.first else { error = "Connect your Mac and phone to the same Wi-Fi or local network, then try again."; return }
         session = UUID().uuidString.replacingOccurrences(of: "-", with: "").lowercased()
         expires = Date().addingTimeInterval(900)
         let currentSession = session
@@ -55,7 +55,7 @@ final class AppModel: ObservableObject {
             Task { @MainActor in
                 guard let self, self.session == currentSession else { return }
                 switch result {
-                case .success(let port): self.port = port; self.updateURL(); self.status = "Scan the code with your iPhone camera."
+                case .success(let port): self.port = port; self.updateURL(); self.status = "Scan the code with your phone camera."
                 case .failure(let error): self.error = "Could not start the local connection: \(error.localizedDescription)"; self.endSession(); self.phase = .idle
                 }
             }
