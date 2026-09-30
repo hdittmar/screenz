@@ -30,6 +30,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         window.delegate = self
         window.contentView = NSHostingView(rootView: MainView(model: model))
         window.center()
+        model.requestSaveArrangement = { [weak self] in self?.saveArrangement() }
         model.bringForward = { [weak self] in
             guard let self else { return }
             // Always bring the confirmation back to the primary screen after a rearrangement.
@@ -48,33 +49,122 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate, NSMe
         let image = NSImage(systemSymbolName: "display.2", accessibilityDescription: "Screenz")
         image?.isTemplate = true
         statusItem.button?.image = image
-        statusItem.button?.toolTip = "Screenz · Click to open, right-click for options"
+        statusItem.button?.toolTip = "Screenz"
         statusItem.button?.setAccessibilityLabel("Screenz")
-        statusItem.button?.target = self
-        statusItem.button?.action = #selector(statusItemClicked)
-        statusItem.button?.sendAction(on: [.leftMouseUp, .rightMouseUp])
-        let menu = optionsMenu
-        menu.autoenablesItems = false
-        menu.delegate = self
-        loginItem.target = self
-        menu.addItem(loginItem)
+        optionsMenu.autoenablesItems = false
+        optionsMenu.delegate = self
+        statusItem.menu = optionsMenu
+    }
+
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        guard menu === optionsMenu else { return }
+        model.reloadArrangements()
+        menu.removeAllItems()
+        let busy = model.phase == .confirming || model.phase == .processing
+        func add(_ title: String, _ action: Selector, enabled: Bool = true) -> NSMenuItem {
+            let item = NSMenuItem(title: title, action: action, keyEquivalent: "")
+            item.target = self; item.isEnabled = enabled; menu.addItem(item)
+            return item
+        }
+        add("Scan my desk…", #selector(startScan), enabled: !busy)
+        if model.phase != .idle && model.phase != .done {
+            add(model.phase == .confirming ? "Confirm arrangement…" : "Continue…", #selector(showWindow))
+        }
+        add("Save current arrangement…", #selector(saveArrangement), enabled: !busy && model.arrangementStoreError == nil)
+        if model.arrangementStoreError != nil {
+            add("Saved arrangements unavailable…", #selector(showArrangementError))
+        } else if !model.savedArrangements.isEmpty {
+            menu.addItem(.separator())
+            let current = DisplaySystem.read()
+            let valid = (try? DisplaySystem.ensureSameDisplays(current)) != nil
+            let identities = (try? DisplaySystem.identities(for: current)) ?? [:]
+            for arrangement in model.savedArrangements {
+                let resolved = try? arrangement.resolve(displays: current, identities: identities)
+                let available = valid && resolved != nil
+                let item = add(arrangement.title + (available ? "" : " — unavailable"), #selector(selectArrangement(_:)), enabled: available && !busy)
+                item.representedObject = arrangement.id.uuidString
+                item.toolTip = available ? "Apply this saved arrangement" : "Connect the same displays at their saved resolutions."
+                if let resolved, available && !busy && zip(current, resolved).allSatisfy({ abs($0.0.x - $0.1.x) < 0.5 && abs($0.0.y - $0.1.y) < 0.5 }) {
+                    item.state = .on
+                }
+            }
+            let manage = NSMenuItem(title: "Manage arrangements", action: nil, keyEquivalent: "")
+            let submenu = NSMenu()
+            submenu.autoenablesItems = false
+            for arrangement in model.savedArrangements {
+                let row = NSMenuItem(title: arrangement.title, action: nil, keyEquivalent: "")
+                let actions = NSMenu()
+                actions.autoenablesItems = false
+                for (title, selector) in [("Rename…", #selector(renameArrangement(_:))), ("Delete…", #selector(deleteArrangement(_:)))] {
+                    let item = NSMenuItem(title: title, action: selector, keyEquivalent: "")
+                    item.target = self; item.representedObject = arrangement.id.uuidString
+                    item.isEnabled = !busy
+                    actions.addItem(item)
+                }
+                row.submenu = actions; submenu.addItem(row)
+            }
+            manage.submenu = submenu; menu.addItem(manage)
+        }
         menu.addItem(.separator())
-        let quitItem = NSMenuItem(title: "Quit Screenz", action: #selector(quit), keyEquivalent: "q")
-        quitItem.target = self
-        menu.addItem(quitItem)
-    }
-
-    @objc private func statusItemClicked() {
-        if let event = NSApp.currentEvent,
-           event.type == .rightMouseUp || event.modifierFlags.contains(.control),
-           let button = statusItem.button {
-            optionsMenu.popUp(positioning: nil, at: NSPoint(x: 0, y: button.bounds.minY), in: button)
-        } else { showWindow() }
-    }
-
-    func menuWillOpen(_ menu: NSMenu) {
+        loginItem.target = self
         loginItem.state = SMAppService.mainApp.status == .enabled ? .on : .off
         loginItem.title = SMAppService.mainApp.status == .requiresApproval ? "Allow Launch at Login…" : "Launch at Login"
+        menu.addItem(loginItem)
+        let quitItem = add("Quit Screenz", #selector(quit))
+        quitItem.keyEquivalent = "q"
+    }
+
+    @objc private func startScan() { model.start(); showWindow() }
+    @objc private func showArrangementError() {
+        model.error = model.arrangementStoreError
+        showWindow()
+    }
+    private func arrangement(from sender: NSMenuItem) -> SavedArrangement? {
+        guard let id = sender.representedObject as? String else { return nil }
+        return model.savedArrangements.first { $0.id.uuidString == id }
+    }
+    @objc private func selectArrangement(_ sender: NSMenuItem) {
+        guard let arrangement = arrangement(from: sender) else { return }
+        model.selectArrangement(arrangement)
+    }
+    @objc private func saveArrangement() {
+        guard model.phase != .confirming, model.phase != .processing else { return }
+        editTitle(heading: "Save current arrangement", value: "", button: "Save") { title in
+            try model.saveCurrentArrangement(title: title)
+        }
+    }
+    @objc private func renameArrangement(_ sender: NSMenuItem) {
+        guard let arrangement = arrangement(from: sender) else { return }
+        editTitle(heading: "Rename arrangement", value: arrangement.title, button: "Rename") { title in
+            try model.renameArrangement(arrangement, title: title)
+        }
+    }
+    private func editTitle(heading: String, value: String, button: String, save: (String) throws -> Void) {
+        NSApp.activate(ignoringOtherApps: true)
+        let alert = NSAlert()
+        alert.messageText = heading
+        alert.informativeText = "Give this display arrangement a title."
+        alert.addButton(withTitle: button); alert.addButton(withTitle: "Cancel")
+        let field = NSTextField(string: value)
+        field.placeholderString = "e.g. Work"
+        field.frame = NSRect(x: 0, y: 0, width: 300, height: 24)
+        alert.accessoryView = field
+        alert.window.initialFirstResponder = field
+        while alert.runModal() == .alertFirstButtonReturn {
+            do { try save(field.stringValue); return }
+            catch { alert.informativeText = error.localizedDescription }
+        }
+    }
+    @objc private func deleteArrangement(_ sender: NSMenuItem) {
+        guard let arrangement = arrangement(from: sender) else { return }
+        NSApp.activate(ignoringOtherApps: true)
+        let alert = NSAlert()
+        alert.messageText = "Delete “\(arrangement.title)”?"
+        alert.informativeText = "Your current display positions will stay unchanged."
+        alert.addButton(withTitle: "Delete"); alert.addButton(withTitle: "Cancel")
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        do { try model.deleteArrangement(arrangement) }
+        catch { model.error = error.localizedDescription; showWindow() }
     }
 
     @objc func showWindow() {
@@ -244,6 +334,7 @@ struct MainView: View {
                     Spacer()
                     Button("Keep arrangement", action: model.keep).buttonStyle(.borderedProminent).controlSize(.large)
                 } else if model.phase == .done {
+                    Button("Save arrangement…") { model.requestSaveArrangement?() }.buttonStyle(.plain)
                     Spacer()
                     Button("Done") { model.phase = .idle; model.proposal = []; model.refresh() }
                         .buttonStyle(.borderedProminent).controlSize(.large)

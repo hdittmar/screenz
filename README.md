@@ -18,7 +18,7 @@ Download the universal **DMG** from [Releases](https://github.com/hdittmar/scree
 
 ## Use
 
-1. Click the menu bar icon and choose **Connect phone**.
+1. Click the menu bar icon and choose **Scan my desk…**.
 2. Scan the QR code with your phone’s camera and open the link in your browser.
 3. Tap **Show screen markers**, then photograph all your displays in one image.
 4. Tap **Send to my Mac**. Review the detected layout and drag screens to correct offsets.
@@ -26,7 +26,15 @@ Download the universal **DMG** from [Releases](https://github.com/hdittmar/scree
 
 Press Escape to hide the markers. **Import photo** accepts an image from the current scan, including one sent through AirDrop. Mirroring must be disabled.
 
-Click the menu bar icon to open Screenz directly. Closing the window keeps it running. Right-click the icon for **Launch at Login** and **Quit Screenz**; automatic login launch is off by default.
+Click the menu bar icon for scanning, saved arrangements, **Launch at Login**, and **Quit Screenz**. Closing the window keeps it running; automatic login launch is off by default.
+
+## Saved arrangements
+
+Choose **Save current arrangement…** in the menu bar, enter a title such as “Work” or “Home”, and click Save. This saves the display positions currently in use, so keep a newly scanned arrangement before saving it. The confirmation screen also offers **Save arrangement…** after you click Keep.
+
+Saved titles appear directly in the menu bar dropdown. Select one to apply it, then choose **Keep arrangement** within 20 seconds or the previous positions are restored. A checkmark identifies a matching current layout. Use **Manage arrangements** to rename or delete an entry.
+
+Arrangements persist locally in `~/Library/Application Support/Screenz/arrangements.json`. Displays are matched by persistent system UUID rather than their temporary numeric IDs or names. Entries are unavailable when displays are missing, extra displays are connected, or logical resolutions differ. Screenz preserves the current main display, scaling, and rotation; saved coordinates are translated to the current main display's origin.
 
 ## Build and test
 

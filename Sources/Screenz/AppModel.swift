@@ -15,6 +15,10 @@ final class AppModel: ObservableObject {
     @Published var remaining = 0
     @Published var connected = false
     @Published var isDemo = false
+    @Published private(set) var savedArrangements: [SavedArrangement] = []
+    @Published private(set) var arrangementStoreError: String?
+    var requestSaveArrangement: (() -> Void)?
+    private let arrangementStore: ArrangementStore
     enum Phase { case idle, pairing, markers, processing, review, confirming, done }
     private var session = ""
     private var port: UInt16 = 0
@@ -27,8 +31,50 @@ final class AppModel: ObservableObject {
     private var deadline: Date?
     var bringForward: (() -> Void)?
 
-    init() { refresh() }
+    init(arrangementStore: ArrangementStore? = nil) {
+        self.arrangementStore = arrangementStore ?? ArrangementStore(url:
+            FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+                .appendingPathComponent("Screenz/arrangements.json"))
+        refresh(); reloadArrangements()
+    }
     func refresh() { displays = DisplaySystem.read() }
+
+    func reloadArrangements() {
+        do { savedArrangements = try arrangementStore.load(); arrangementStoreError = nil }
+        catch { arrangementStoreError = error.localizedDescription }
+    }
+
+    func saveCurrentArrangement(title: String) throws {
+        guard phase != .confirming, phase != .processing else { throw AppError.message("Finish the current arrangement first.") }
+        let current = DisplaySystem.read()
+        try DisplaySystem.ensureSameDisplays(current)
+        let saved = try SavedArrangement(title: title, displays: current, identities: DisplaySystem.identities(for: current))
+        savedArrangements = try arrangementStore.save(saved)
+        arrangementStoreError = nil
+    }
+
+    func renameArrangement(_ arrangement: SavedArrangement, title: String) throws {
+        var renamed = arrangement
+        renamed.title = title
+        savedArrangements = try arrangementStore.save(renamed)
+    }
+
+    func deleteArrangement(_ arrangement: SavedArrangement) throws {
+        savedArrangements = try arrangementStore.remove(id: arrangement.id)
+    }
+
+    func selectArrangement(_ arrangement: SavedArrangement) {
+        guard phase != .confirming, phase != .processing else { return }
+        do {
+            let current = DisplaySystem.read()
+            try DisplaySystem.ensureSameDisplays(current)
+            let resolved = try arrangement.resolve(displays: current, identities: DisplaySystem.identities(for: current))
+            endSession(); isDemo = false; error = nil
+            displays = current; proposal = resolved; phase = .review
+            apply()
+        } catch { self.error = error.localizedDescription }
+        bringForward?()
+    }
 
     var validationError: String? {
         do { try Layout.validate(proposal); return nil }
@@ -36,7 +82,7 @@ final class AppModel: ObservableObject {
     }
 
     func start() {
-        guard phase != .confirming else { return }
+        guard phase != .confirming, phase != .processing else { return }
         endSession()
         isDemo = false; error = nil; proposal = []; refresh()
         guard displays.count > 1 else { error = "Connect at least two displays to scan your desk."; return }

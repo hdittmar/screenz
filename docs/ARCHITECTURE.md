@@ -1,5 +1,11 @@
 # Architecture
 
+## Saved arrangements
+
+`SavedArrangement` stores named positions keyed by ColorSync display UUIDs. Restoring remaps them to current Core Graphics IDs, requires the same display set and logical dimensions, preserves the current main display through coordinate translation, and validates connectivity and overlap before applying. Saved selection reuses the temporary apply and 20-second Keep/Revert flow.
+
+`ArrangementStore` persists a versioned JSON document in Application Support with atomic writes. Title collisions are rejected. Corrupt or newer-format files are left untouched rather than silently replaced. Tests use isolated temporary directories and never write real user presets or change display settings.
+
 ## Why a QR code and a local web page?
 
 The Mac starts an HTTP server on a random port. The pairing QR contains its LAN IP address and a random 128-bit session token. The browser opens a bundled page with `<input type="file" accept="image/*" capture="environment">`, which delegates photo taking to the phone's camera/photo interface. There is no embedded live camera stream: [`getUserMedia` requires a secure context](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia), which plain HTTP on a LAN IP does not provide. The [HTML capture attribute](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Attributes/capture) supports the simpler photo-upload flow, with an existing-photo picker as a fallback.

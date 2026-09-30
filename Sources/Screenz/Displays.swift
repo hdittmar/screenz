@@ -4,8 +4,20 @@ import CoreImage
 import Vision
 import ImageIO
 import ScreenzCore
+import ColorSync
 
 enum DisplaySystem {
+    static func identities(for displays: [Display]) throws -> [UInt32: String] {
+        var result: [UInt32: String] = [:]
+        for display in displays {
+            guard let uuid = CGDisplayCreateUUIDFromDisplayID(display.id)?.takeRetainedValue(),
+                  let value = CFUUIDCreateString(nil, uuid) else { throw ArrangementError.unidentifiedDisplays }
+            result[display.id] = value as String
+        }
+        guard Set(result.values).count == displays.count else { throw ArrangementError.unidentifiedDisplays }
+        return result
+    }
+
     static func read() -> [Display] {
         NSScreen.screens.compactMap { screen in
             guard let number = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber else { return nil }
