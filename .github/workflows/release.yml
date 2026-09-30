@@ -34,7 +34,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if ! gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+          if DRAFT=$(gh release view "$GITHUB_REF_NAME" --json isDraft --jq .isDraft 2>/dev/null); then
+            if [ "$DRAFT" != true ]; then
+              echo "Release is already published; leaving its assets unchanged."
+              exit 0
+            fi
+          else
             gh release create "$GITHUB_REF_NAME" --draft --title "Screenz $GITHUB_REF_NAME" --notes-file Packaging/Release-notes.md
           fi
           gh release upload "$GITHUB_REF_NAME" dist/*.dmg dist/*.zip dist/*.sha256 --clobber

@@ -88,12 +88,14 @@ enum PhotoDetector {
                   let id = UInt32(parts[2]), displays.contains(where: { $0.id == id }) else { continue }
             guard found[id] == nil else { throw AppError.message("A display marker appears twice. Take a photo without reflections or duplicate images.") }
             let w = Double(image.width), h = Double(image.height)
-            func length(_ a: CGPoint, _ b: CGPoint) -> Double { hypot((a.x - b.x) * w, (a.y - b.y) * h) }
+            func length(_ a: CGPoint, _ b: CGPoint) -> Double { hypot(Double(a.x - b.x) * w, Double(a.y - b.y) * h) }
             let horizontal = (length(observation.topLeft, observation.topRight) + length(observation.bottomLeft, observation.bottomRight)) / 2
             let vertical = (length(observation.topLeft, observation.bottomLeft) + length(observation.topRight, observation.bottomRight)) / 2
             guard min(horizontal, vertical) / max(horizontal, vertical) > 0.45 else { throw LayoutError.ambiguous }
             let corners = [observation.topLeft, observation.topRight, observation.bottomLeft, observation.bottomRight]
-            let center = CGPoint(x: corners.map(\.x).reduce(0, +) / 4 * w, y: (1 - corners.map(\.y).reduce(0, +) / 4) * h)
+            let centerX = Double(corners.reduce(CGFloat.zero) { $0 + $1.x }) / 4.0 * w
+            let centerY = (1.0 - Double(corners.reduce(CGFloat.zero) { $0 + $1.y }) / 4.0) * h
+            let center = CGPoint(x: centerX, y: centerY)
             found[id] = Marker(id: id, center: center, size: (horizontal + vertical) / 2)
         }
         guard found.count == displays.count else {

@@ -66,8 +66,8 @@ public enum Layout {
             guard let (i, j, _) = best else { throw LayoutError.invalid }
             let a = observations[displays[i].id]!, b = observations[displays[j].id]!
             let scale = (a.size / displays[i].markerSize + b.size / displays[j].markerSize) / 2
-            let dx = (b.center.x - a.center.x) / scale
-            let dy = (b.center.y - a.center.y) / scale
+            let dx = Double(b.center.x - a.center.x) / scale
+            let dy = Double(b.center.y - a.center.y) / scale
             let anchor = result[i]
             var next = result[j]
             let horizontal = abs(dx) / ((anchor.width + next.width) / 2) >= abs(dy) / ((anchor.height + next.height) / 2)
